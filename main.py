@@ -6,11 +6,11 @@ from flask import Flask
 import redis
 
 app = Flask(__name__)
-redis_dbr = redis.Redis(host='localhost', port=6379, decode_responses=True)
+# redis_dbr = redis.Redis(host='localhost', port=6379, decode_responses=True)
 
 @app.route("/")
 def hello_world():
-    name = os.environ.get("NAME", "Worlda")
+    name = os.environ.get("NAME", "World")
     return f"Hello {name}!"
 
 if __name__ == "__main__":
