@@ -1,0 +1,10 @@
+[project]
+name = "csc-5201-mini-project-stonemc"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "flask==3.1.3",
+    "gunicorn==23.0.0",
+    "pytest==9.0.3",
+    "redis>=8.1.0",
+]
