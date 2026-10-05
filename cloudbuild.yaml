@@ -22,3 +22,6 @@ steps:
 
 options:
   logging: CLOUD_LOGGING_ONLY
+
+images:
+  - "us-central1-docker.pkg.dev/microservices-miniproject/cart/my-flask-app:latest"
