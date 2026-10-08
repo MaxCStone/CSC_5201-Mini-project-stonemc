@@ -6,7 +6,7 @@ VALID_ITEM = {
     "product_id": "ABC123",
     "name": "Keyboard",
     "description": "Wireless keyboard",
-    "price": 29.99,
+    "price_usd": 29.99,
     "categories": ["electronics", "office"],
 }
 
@@ -63,8 +63,8 @@ def test_get_cart_after_adding_item(client):
     {"product_id": "ABC123"},
     {**VALID_ITEM, "extra": "field"},
     {**VALID_ITEM, "product_id": ""},
-    {**VALID_ITEM, "price": -1},
-    {**VALID_ITEM, "price": "29.99"},
+    {**VALID_ITEM, "price_usd": -1},
+    {**VALID_ITEM, "price_usd": "29.99"},
     {**VALID_ITEM, "categories": []},
     {**VALID_ITEM, "categories": ["electronics", 123]},
 ])
