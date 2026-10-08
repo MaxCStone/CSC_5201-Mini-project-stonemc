@@ -25,11 +25,11 @@ def get_cart(user_id):
 def add_to_cart(user_id):
     item = request.get_json(silent=True)
 
-    required_fields = {"product_id", "name", "description", "price", "categories"}
+    required_fields = {"product_id", "name", "description", "price_usd", "categories"}
 
     if not isinstance(item, dict) or set(item.keys()) != required_fields:
         return jsonify({
-            "error": "JSON must contain only product_id, name, description, price, and categories fields"
+            "error": "JSON must contain only product_id, name, description, price_usd, and categories fields"
         }), 400
 
     if not isinstance(item["product_id"], str) or not item["product_id"]:
@@ -41,11 +41,11 @@ def add_to_cart(user_id):
     if not isinstance(item["description"], str) or not item["description"]:
         return jsonify({"error": "description must be a non-empty string"}), 400
     
-    if not isinstance(item["price"], (int, float)) or isinstance(item["price"], bool):
-        return jsonify({"error": "price must be a number"}), 400
+    if not isinstance(item["price_usd"], (int, float)) or isinstance(item["price_usd"], bool):
+        return jsonify({"error": "price_usd must be a number"}), 400
 
-    if item["price"] < 0:
-        return jsonify({"error": "price cannot be negative"}), 400
+    if item["price_usd"] < 0:
+        return jsonify({"error": "price_usd cannot be negative"}), 400
 
     if (
         not isinstance(item["categories"], list)
