@@ -42,6 +42,20 @@ def test_get_empty_cart(client):
     }
 
 
+def test_redis_failure_returns_service_unavailable(client, monkeypatch):
+    def raise_connection_error(key):
+        raise main.redis.exceptions.ConnectionError("Redis is unavailable")
+
+    monkeypatch.setattr(main.redis_db, "get", raise_connection_error)
+
+    response = client.get("/cart/123")
+
+    assert response.status_code == 503
+    assert response.get_json() == {
+        "error": "Cart service is temporarily unavailable"
+    }
+
+
 def test_add_valid_item(client):
     response = client.post("/cart/123", json=VALID_ITEM)
 

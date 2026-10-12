@@ -9,7 +9,19 @@ redis_db = redis.Redis(
     host=os.environ.get("REDIS_HOST", "127.0.0.1"),
     port=int(os.environ.get("REDIS_PORT", "6379")),
     decode_responses=True,
+    socket_connect_timeout=float(
+        os.environ.get("REDIS_SOCKET_CONNECT_TIMEOUT", "5")
+    ),
+    socket_timeout=float(os.environ.get("REDIS_SOCKET_TIMEOUT", "5")),
 )
+
+
+@app.errorhandler(redis.exceptions.RedisError)
+def handle_redis_error(error):
+    app.logger.exception("Redis operation failed", exc_info=error)
+    return jsonify({
+        "error": "Cart service is temporarily unavailable"
+    }), 503
 
 
 @app.route("/cart/<user_id>", methods=["GET"])
