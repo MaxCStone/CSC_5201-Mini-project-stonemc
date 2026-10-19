@@ -42,6 +42,30 @@ def test_get_empty_cart(client):
     }
 
 
+@pytest.mark.parametrize(
+    ("method", "kwargs"),
+    [
+        ("GET", {}),
+        ("POST", {"json": VALID_ITEM}),
+        ("DELETE", {}),
+    ],
+)
+def test_routes_log_correlation_id(client, monkeypatch, method, kwargs):
+    logged_messages = []
+    monkeypatch.setattr(main.logger, "log_text", logged_messages.append)
+
+    response = client.open(
+        "/cart/123",
+        method=method,
+        headers={"correlation_id": "corr-123"},
+        **kwargs,
+    )
+
+    assert response.status_code in {200, 201}
+    assert len(logged_messages) == 1
+    assert "Correlation ID: corr-123" in logged_messages[0]
+
+
 def test_redis_failure_returns_service_unavailable(client, monkeypatch):
     def raise_connection_error(key):
         raise main.redis.exceptions.ConnectionError("Redis is unavailable")
