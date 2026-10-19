@@ -41,7 +41,7 @@ def get_cart(user_id):
 
 @app.route("/cart/<user_id>", methods=["POST"])
 def add_to_cart(user_id):
-    log_string = f"{datetime.datetime.now()} | user_id: {user_id} | cart | {request.method} | Correlation ID: {request.headers.get('correlation_id', 'N/A')} | "
+    log_string = f"user_id: {user_id} | cart | {request.method} | Correlation ID: {request.headers.get('correlation_id', 'N/A')} | "
     
     item = request.get_json(silent=True)
 
@@ -112,7 +112,7 @@ def add_to_cart(user_id):
 @app.route("/cart/<user_id>", methods=["DELETE"])
 def delete_cart(user_id):
     redis_db.delete(f"cart:{user_id}")
-    log_string = f"{datetime.datetime.now()} | user_id: {user_id} | cart | {request.method} | Correlation ID: {request.headers.get('correlation_id', 'N/A')} | INFO: Cart deleted"
+    log_string = f"user_id: {user_id} | cart | {request.method} | Correlation ID: {request.headers.get('correlation_id', 'N/A')} | INFO: Cart deleted"
     logger.log_text(log_string)
     return jsonify({
         "message": f"Cart deleted for user {user_id}"
