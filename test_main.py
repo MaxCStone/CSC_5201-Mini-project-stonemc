@@ -87,6 +87,16 @@ def test_add_valid_item(client):
     assert response.get_json()["item"] == VALID_ITEM
 
 
+def test_add_item_with_price_alias(client):
+    item_with_price = {**VALID_ITEM, "price": VALID_ITEM["price_usd"]}
+    del item_with_price["price_usd"]
+
+    response = client.post("/cart/123", json=item_with_price)
+
+    assert response.status_code == 201
+    assert response.get_json()["item"] == VALID_ITEM
+
+
 def test_get_cart_after_adding_item(client):
     client.post("/cart/123", json=VALID_ITEM)
 
@@ -103,6 +113,7 @@ def test_get_cart_after_adding_item(client):
     {**VALID_ITEM, "product_id": ""},
     {**VALID_ITEM, "price_usd": -1},
     {**VALID_ITEM, "price_usd": "29.99"},
+    {**VALID_ITEM, "price": VALID_ITEM["price_usd"]},
     {**VALID_ITEM, "categories": []},
     {**VALID_ITEM, "categories": ["electronics", 123]},
 ])

@@ -45,14 +45,29 @@ def add_to_cart(user_id):
     
     item = request.get_json(silent=True)
 
-    required_fields = {"product_id", "name", "description", "price_usd", "categories"}
+    required_fields = {"product_id", "name", "description", "categories"}
 
-    if not isinstance(item, dict) or set(item.keys()) != required_fields:
+    if not isinstance(item, dict):
         log_string += "ERROR: Invalid JSON structure"
         logger.log_text(log_string)
         return jsonify({
-            "error": "JSON must contain only product_id, name, description, price_usd, and categories fields"
+            "error": "JSON must contain product_id, name, description, price or price_usd, and categories fields"
         }), 400
+
+    price_fields = {"price", "price_usd"} & item.keys()
+    if (
+        not required_fields.issubset(item)
+        or set(item) != required_fields | price_fields
+        or len(price_fields) != 1
+    ):
+        log_string += "ERROR: Invalid JSON structure"
+        logger.log_text(log_string)
+        return jsonify({
+            "error": "JSON must contain only product_id, name, description, categories, and exactly one of price or price_usd"
+        }), 400
+
+    if "price" in item:
+        item["price_usd"] = item.pop("price")
 
     if not isinstance(item["product_id"], str) or not item["product_id"]:
         log_string += "ERROR: Invalid product_id"
