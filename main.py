@@ -21,20 +21,14 @@ redis_db = redis.Redis(
 
 
 def get_correlation_id():
-    correlation_id = request.headers.get("X-Correlation-ID")
-    if correlation_id is None:
-        correlation_id = request.headers.get("correlation_id")
-    return correlation_id
+    return request.headers.get("correlation-id")
 
 
 def build_correlation_headers():
     correlation_id = get_correlation_id()
     if correlation_id is None:
         return {}
-    return {
-        "X-Correlation-ID": correlation_id,
-        "correlation_id": correlation_id,
-    }
+    return {"correlation-id": correlation_id}
 
 
 @app.errorhandler(redis.exceptions.RedisError)

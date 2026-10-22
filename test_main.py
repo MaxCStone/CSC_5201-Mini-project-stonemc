@@ -51,22 +51,25 @@ def test_get_empty_cart(client):
     ],
 )
 @pytest.mark.parametrize(
-    ("headers", "expected_correlation_id"),
+    ("headers", "query_string", "expected_correlation_id"),
     [
-        ({"X-Correlation-ID": "corr-canonical"}, "corr-canonical"),
-        ({"correlation_id": "corr-legacy"}, "corr-legacy"),
         (
-            {
-                "X-Correlation-ID": "corr-canonical",
-                "correlation_id": "corr-legacy",
-            },
-            "corr-canonical",
+            {"correlation-id": "corr-header"},
+            {},
+            "corr-header",
         ),
-        ({}, "N/A"),
+        (
+            {"X-Correlation-ID": "corr-legacy"},
+            {"correlation_id": "corr-query"},
+            "N/A",
+        ),
+        ({}, {"correlation_id": "corr-query"}, "N/A"),
+        ({}, {}, "N/A"),
     ],
 )
 def test_routes_log_correlation_id(
-    client, monkeypatch, method, kwargs, headers, expected_correlation_id
+    client, monkeypatch, method, kwargs, headers, query_string,
+    expected_correlation_id
 ):
     logged_messages = []
     monkeypatch.setattr(main.logger, "log_text", logged_messages.append)
@@ -75,46 +78,37 @@ def test_routes_log_correlation_id(
         "/cart/123",
         method=method,
         headers=headers,
+        query_string=query_string,
         **kwargs,
     )
 
     assert response.status_code in {200, 201}
     assert len(logged_messages) == 1
     assert f"Correlation ID: {expected_correlation_id}" in logged_messages[0]
+    if method == "POST":
+        assert response.get_json()["item"] == VALID_ITEM
 
 
 @pytest.mark.parametrize(
-    ("headers", "expected"),
+    ("query_string", "headers", "expected"),
     [
         (
-            {"X-Correlation-ID": "corr-canonical"},
-            {
-                "X-Correlation-ID": "corr-canonical",
-                "correlation_id": "corr-canonical",
-            },
+            {"correlation_id": "corr-query"},
+            {"correlation-id": "corr-header"},
+            {"correlation-id": "corr-header"},
         ),
         (
-            {"correlation_id": "corr-legacy"},
-            {
-                "X-Correlation-ID": "corr-legacy",
-                "correlation_id": "corr-legacy",
-            },
+            {},
+            {"X-Correlation-ID": "corr-legacy"},
+            {},
         ),
-        (
-            {
-                "X-Correlation-ID": "corr-canonical",
-                "correlation_id": "corr-legacy",
-            },
-            {
-                "X-Correlation-ID": "corr-canonical",
-                "correlation_id": "corr-canonical",
-            },
-        ),
-        ({}, {}),
+        ({}, {}, {}),
     ],
 )
-def test_build_correlation_headers(headers, expected):
-    with main.app.test_request_context("/", headers=headers):
+def test_build_correlation_headers(query_string, headers, expected):
+    with main.app.test_request_context(
+        "/", method="POST", query_string=query_string, headers=headers
+    ):
         assert main.build_correlation_headers() == expected
 
 
@@ -162,6 +156,7 @@ def test_get_cart_after_adding_item(client):
     {},
     {"product_id": "ABC123"},
     {**VALID_ITEM, "extra": "field"},
+    {**VALID_ITEM, "correlation_id": "corr-body"},
     {**VALID_ITEM, "product_id": ""},
     {**VALID_ITEM, "price_usd": -1},
     {**VALID_ITEM, "price_usd": "29.99"},
