@@ -50,20 +50,72 @@ def test_get_empty_cart(client):
         ("DELETE", {}),
     ],
 )
-def test_routes_log_correlation_id(client, monkeypatch, method, kwargs):
+@pytest.mark.parametrize(
+    ("headers", "expected_correlation_id"),
+    [
+        ({"X-Correlation-ID": "corr-canonical"}, "corr-canonical"),
+        ({"correlation_id": "corr-legacy"}, "corr-legacy"),
+        (
+            {
+                "X-Correlation-ID": "corr-canonical",
+                "correlation_id": "corr-legacy",
+            },
+            "corr-canonical",
+        ),
+        ({}, "N/A"),
+    ],
+)
+def test_routes_log_correlation_id(
+    client, monkeypatch, method, kwargs, headers, expected_correlation_id
+):
     logged_messages = []
     monkeypatch.setattr(main.logger, "log_text", logged_messages.append)
 
     response = client.open(
         "/cart/123",
         method=method,
-        headers={"correlation_id": "corr-123"},
+        headers=headers,
         **kwargs,
     )
 
     assert response.status_code in {200, 201}
     assert len(logged_messages) == 1
-    assert "Correlation ID: corr-123" in logged_messages[0]
+    assert f"Correlation ID: {expected_correlation_id}" in logged_messages[0]
+
+
+@pytest.mark.parametrize(
+    ("headers", "expected"),
+    [
+        (
+            {"X-Correlation-ID": "corr-canonical"},
+            {
+                "X-Correlation-ID": "corr-canonical",
+                "correlation_id": "corr-canonical",
+            },
+        ),
+        (
+            {"correlation_id": "corr-legacy"},
+            {
+                "X-Correlation-ID": "corr-legacy",
+                "correlation_id": "corr-legacy",
+            },
+        ),
+        (
+            {
+                "X-Correlation-ID": "corr-canonical",
+                "correlation_id": "corr-legacy",
+            },
+            {
+                "X-Correlation-ID": "corr-canonical",
+                "correlation_id": "corr-canonical",
+            },
+        ),
+        ({}, {}),
+    ],
+)
+def test_build_correlation_headers(headers, expected):
+    with main.app.test_request_context("/", headers=headers):
+        assert main.build_correlation_headers() == expected
 
 
 def test_redis_failure_returns_service_unavailable(client, monkeypatch):

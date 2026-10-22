@@ -20,6 +20,23 @@ redis_db = redis.Redis(
 )
 
 
+def get_correlation_id():
+    correlation_id = request.headers.get("X-Correlation-ID")
+    if correlation_id is None:
+        correlation_id = request.headers.get("correlation_id")
+    return correlation_id
+
+
+def build_correlation_headers():
+    correlation_id = get_correlation_id()
+    if correlation_id is None:
+        return {}
+    return {
+        "X-Correlation-ID": correlation_id,
+        "correlation_id": correlation_id,
+    }
+
+
 @app.errorhandler(redis.exceptions.RedisError)
 def handle_redis_error(error):
     app.logger.exception("Redis operation failed", exc_info=error)
@@ -30,7 +47,12 @@ def handle_redis_error(error):
 
 @app.route("/cart/<user_id>", methods=["GET"])
 def get_cart(user_id):
-    log_string = f"user_id: {user_id} | cart | {request.method} | Correlation ID: {request.headers.get('correlation_id', 'N/A')} | INFO: Retrieving cart"
+    correlation_id = get_correlation_id()
+    correlation_id = correlation_id if correlation_id is not None else "N/A"
+    log_string = (
+        f"user_id: {user_id} | cart | {request.method} | "
+        f"Correlation ID: {correlation_id} | INFO: Retrieving cart"
+    )
     logger.log_text(log_string)
     cart = redis_db.get(f"cart:{user_id}")
     return jsonify({
@@ -41,7 +63,12 @@ def get_cart(user_id):
 
 @app.route("/cart/<user_id>", methods=["POST"])
 def add_to_cart(user_id):
-    log_string = f"user_id: {user_id} | cart | {request.method} | Correlation ID: {request.headers.get('correlation_id', 'N/A')} | "
+    correlation_id = get_correlation_id()
+    correlation_id = correlation_id if correlation_id is not None else "N/A"
+    log_string = (
+        f"user_id: {user_id} | cart | {request.method} | "
+        f"Correlation ID: {correlation_id} | "
+    )
     
     item = request.get_json(silent=True)
 
@@ -127,7 +154,12 @@ def add_to_cart(user_id):
 @app.route("/cart/<user_id>", methods=["DELETE"])
 def delete_cart(user_id):
     redis_db.delete(f"cart:{user_id}")
-    log_string = f"user_id: {user_id} | cart | {request.method} | Correlation ID: {request.headers.get('correlation_id', 'N/A')} | INFO: Cart deleted"
+    correlation_id = get_correlation_id()
+    correlation_id = correlation_id if correlation_id is not None else "N/A"
+    log_string = (
+        f"user_id: {user_id} | cart | {request.method} | "
+        f"Correlation ID: {correlation_id} | INFO: Cart deleted"
+    )
     logger.log_text(log_string)
     return jsonify({
         "message": f"Cart deleted for user {user_id}"
